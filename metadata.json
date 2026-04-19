@@ -1,0 +1,6 @@
+{
+  "name": "K-Line AI Strategy Analyst",
+  "description": "Professional K-line analysis tool powered by Gemini AI. Scan charts using custom trading strategies and get quantitative ratings.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
