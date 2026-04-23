@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* Removed @import for static compatibility, using CDN in HTML */
 
 :root {
     --bg: #0F1113;

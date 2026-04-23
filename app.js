@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from "https://esm.run/@google/genai";
 
 // Initialize UI elements
 const dropZone = document.getElementById('drop-zone');
@@ -98,10 +98,10 @@ analyzeBtn.addEventListener('click', async () => {
 
         const base64Image = await fileToBase64(selectedFile);
         
-        // Initialize Gemini using provided or default API Key
-        const apiKey = apiKeyInput.value.trim() || process.env.GEMINI_API_KEY;
+        // Use provided API Key
+        const apiKey = apiKeyInput.value.trim();
         if (!apiKey) {
-            throw new Error("Missing API Key. Please provide one or ensure environment is configured.");
+            throw new Error("請輸入有效的 Gemini API Key。可以從 Google AI Studio 免費取得。");
         }
         
         const ai = new GoogleGenAI({ apiKey });
@@ -133,12 +133,12 @@ analyzeBtn.addEventListener('click', async () => {
             }
         });
 
-        const result = JSON.parse(response.text);
-        displayResults(result, strategyName);
+        const data = JSON.parse(response.text);
+        displayResults(data, strategyName);
 
     } catch (error) {
         console.error("Analysis failed:", error);
-        alert(error.message || "分析系統離線。請檢查網路連接或 API 額度。");
+        alert(error.message || "分析失敗，請檢查 API Key 或網路連接。");
         welcomeMsg.classList.remove('hidden');
     } finally {
         loadingState.classList.add('hidden');
