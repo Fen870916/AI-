@@ -31,8 +31,13 @@ import ReactMarkdown from 'react-markdown';
 import { GoogleGenAI } from "@google/genai";
 
 // Initialize Gemini API
-// Using the system-provided GEMINI_API_KEY
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const getAi = () => {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error('找不到 Gemini API 金鑰。請在 GitHub Secrets 中設定 VITE_GEMINI_API_KEY，或在本地環境變數中設定。');
+  }
+  return new GoogleGenAI({ apiKey: key });
+};
 
 interface Strategy {
   id: string;
@@ -135,6 +140,7 @@ export default function App() {
     setAnalysis(null);
 
     try {
+      const ai = getAi();
       const response = await ai.models.generateContent({
         model: selectedModel,
         contents: {
