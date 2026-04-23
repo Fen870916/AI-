@@ -18,6 +18,9 @@ const loadingState = document.getElementById('loading-state');
 const analysisContent = document.getElementById('analysis-content');
 const ratingBadge = document.getElementById('rating-badge');
 const resConfidence = document.getElementById('res-confidence');
+const resEntry = document.getElementById('res-entry');
+const resExit = document.getElementById('res-exit');
+const resStopLoss = document.getElementById('res-stoploss');
 const resStrategy = document.getElementById('res-strategy');
 const resObservations = document.getElementById('res-observations');
 const resRisk = document.getElementById('res-risk');
@@ -115,6 +118,9 @@ analyzeBtn.addEventListener('click', async () => {
         {
           "rating": "強力買入" | "買入" | "持有" | "賣出" | "強力賣出",
           "confidence": 數字 (0-100),
+          "entry": "建議進場點 (數值或區間描述)",
+          "exit": "目標出場/止盈點 (數值或區間描述)",
+          "stoploss": "止損參考點 (數值或區間描述)",
           "observations": 字串數組 (至少3個關鍵技術觀察點),
           "strategy_alignment": 字串 (說明分析結果如何符合所選策略),
           "risk_warning": 字串 (需要注意的關鍵風險點)
@@ -161,6 +167,9 @@ function displayResults(data, strategy) {
 
     ratingBadge.innerText = data.rating;
     resConfidence.innerText = `${data.confidence}%`;
+    resEntry.innerText = data.entry || "未提供";
+    resExit.innerText = data.exit || "未提供";
+    resStopLoss.innerText = data.stoploss || "未提供";
     resStrategy.innerText = strategy;
     
     // Clear and fill observations
