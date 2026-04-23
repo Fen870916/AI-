@@ -107,6 +107,32 @@
                         <p id="res-risk" class="data-value"></p>
                     </div>
                 </div>
+
+                <!-- History Section -->
+                <div class="history-panel mt-12 pt-8 border-t border-[#2D3139]">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="col-header">分析歷史紀錄 (HISTORY)</span>
+                        <button id="clear-history" class="small-caps px-2 py-1 bg-transparent border border-[#2D3139] hover:border-red-500 hover:text-red-500 transition-colors" style="background: none; border-radius: 2px;">清除全部</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-[#2D3139]">
+                                    <th class="col-header py-2 px-4">訊號</th>
+                                    <th class="col-header py-2 px-4">進場點</th>
+                                    <th class="col-header py-2 px-4">出場點</th>
+                                    <th class="col-header py-2 px-4">止損點</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-list">
+                                <!-- History rows added via JS -->
+                                <tr>
+                                    <td colspan="4" class="small-caps opacity-30 text-center py-8">尚無歷史紀錄</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
         </main>
 

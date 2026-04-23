@@ -25,7 +25,15 @@ const resStrategy = document.getElementById('res-strategy');
 const resObservations = document.getElementById('res-observations');
 const resRisk = document.getElementById('res-risk');
 
+// History elements
+const historyList = document.getElementById('history-list');
+const clearHistoryBtn = document.getElementById('clear-history');
+
 let selectedFile = null;
+let historyData = JSON.parse(localStorage.getItem('kline_history') || '[]');
+
+// Initialize
+renderHistory();
 
 // Clock
 setInterval(() => {
@@ -140,6 +148,17 @@ analyzeBtn.addEventListener('click', async () => {
         });
 
         const data = JSON.parse(response.text);
+        
+        // Save to history
+        const historyRecord = {
+            id: Date.now(),
+            time: new Date().toLocaleString('zh-TW'),
+            strategy: strategyName,
+            result: data,
+            imageData: base64Image
+        };
+        saveToHistory(historyRecord);
+        
         displayResults(data, strategyName);
 
     } catch (error) {
@@ -149,6 +168,59 @@ analyzeBtn.addEventListener('click', async () => {
     } finally {
         loadingState.classList.add('hidden');
         analyzeBtn.disabled = false;
+    }
+});
+
+function saveToHistory(record) {
+    historyData.unshift(record);
+    if (historyData.length > 20) historyData.pop(); // Keep last 20
+    localStorage.setItem('kline_history', JSON.stringify(historyData));
+    renderHistory();
+}
+
+function renderHistory() {
+    if (historyData.length === 0) {
+        historyList.innerHTML = '<tr><td colspan="4" class="small-caps opacity-30 text-center py-8">尚無歷史紀錄</td></tr>';
+        return;
+    }
+
+    historyList.innerHTML = historyData.map(item => {
+        let ratingColor = '#8E9299';
+        const ratingStr = item.result.rating;
+        if (ratingStr.includes('買入')) ratingColor = '#22C55E';
+        if (ratingStr.includes('賣出')) ratingColor = '#EF4444';
+
+        return `
+            <tr class="history-row" data-id="${item.id}" title="${item.time} | ${item.strategy}">
+                <td class="history-rating" style="color: ${ratingColor}">${ratingStr}</td>
+                <td class="history-strategy">${item.result.entry || '--'}</td>
+                <td class="history-strategy">${item.result.exit || '--'}</td>
+                <td class="history-strategy">${item.result.stoploss || '--'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // Add click events
+    document.querySelectorAll('.history-row').forEach(el => {
+        el.addEventListener('click', () => {
+            const id = el.getAttribute('data-id');
+            const record = historyData.find(d => d.id == id);
+            if (record) {
+                welcomeMsg.classList.add('hidden');
+                imagePreview.src = record.imageData;
+                previewContainer.classList.remove('hidden');
+                displayResults(record.result, record.strategy);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    });
+}
+
+clearHistoryBtn.addEventListener('click', () => {
+    if (confirm('確定要清除所有歷史紀錄嗎？')) {
+        historyData = [];
+        localStorage.removeItem('kline_history');
+        renderHistory();
     }
 });
 
