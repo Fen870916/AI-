@@ -1,12 +1,12 @@
 # 🚀 量子 AI K 線策略分析助手 (Quantum AI K-Line Analyzer)
 
 [![GitHub License](https://img.shields.io/github/license/username/repo)](LICENSE)
-[![GitHub Pages](https://img.shields.io/badge/Deployed%20on-GitHub%20Pages-blue?logo=github)](https://fen870916.github.io/AI-VWAP/)
+[![GitHub Pages](https://img.shields.io/badge/Deployed%20on-GitHub%20Pages-blue?logo=github)](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/)
 
 這是一個強大的、純前端的 K 線分析工具。結合了 Google Gemini AI 的視覺辨識能力與量化交易邏輯，讓交易者能夠針對自訂策略對圖表進行深度解析。
 
 ### 🌐 在線直接開啟
-👉 **[點此進入應用程序](https://fen870916.github.io/AI-VWAP/)**
+👉 **[點此進入應用程序](https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/)**
 
 ---
 
