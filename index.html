@@ -1,565 +1,109 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Analytics - AI 交易分析儀</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        bg: '#09090b',
-                        surface: '#18181b',
-                        border: '#27272a',
-                        accent: '#10b981',
-                        'accent-blue': '#3b82f6',
-                        'text-main': '#f4f4f5',
-                        'text-dim': '#71717a',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-        
-        body {
-            background-color: #09090b;
-            color: #f4f4f5;
-            font-family: 'Inter', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #27272a;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(113, 113, 122, 0.5);
-        }
-
-        .prose h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: #10b981; }
-        .prose p { margin-bottom: 0.75rem; font-size: 0.875rem; line-height: 1.8; color: #cbd5e1; }
-        .prose ul { list-style: none; margin-bottom: 1rem; padding-left: 0; }
-        .prose li { position: relative; padding-left: 1.25rem; font-size: 0.875rem; color: #cbd5e1; margin-bottom: 0.5rem; }
-        .prose li::before { content: '→'; position: absolute; left: 0; color: #3b82f6; }
-        .prose strong { color: #ffffff; font-weight: 600; }
-    </style>
+    <title>K-Line AI Strategy Analyst</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-    <div id="root"></div>
+<body class="tech-dashboard">
+    <div id="app">
+        <header>
+            <div class="logo">
+                <span class="logo-text">K-LINE ANALYST</span>
+                <span class="status-indicator">系統正常</span>
+            </div>
+            <div class="system-time" id="clock">00:00:00</div>
+        </header>
 
-    <!-- Load Dependencies via ESM -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@19",
-            "react-dom/client": "https://esm.sh/react-dom@19/client",
-            "lucide-react": "https://esm.sh/lucide-react@0.454.0?external=react",
-            "motion/react": "https://esm.sh/motion/react@11.11.11?external=react",
-            "recharts": "https://esm.sh/recharts@2.13.0?external=react,react-dom",
-            "react-markdown": "https://esm.sh/react-markdown@9.0.1?external=react",
-            "@google/generative-ai": "https://esm.sh/@google/generative-ai@0.21.0"
-        }
-    }
-    </script>
+        <main>
+            <section class="control-panel">
+                <div class="panel-header">系統配置 (CONFIGURATION)</div>
+                <div class="panel-body">
+                    <div class="input-group">
+                        <label class="col-header">GEMINI API KEY</label>
+                        <input type="text" id="api-key-input" placeholder="輸入您的 API Key (選填)">
+                        <span class="small-caps" style="font-size: 10px; margin-top: 4px;">留空則使用系統預設</span>
+                    </div>
 
-    <script type="module">
-        import React, { useState, useEffect, useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { 
-            BarChart3, Upload, Settings2, History, Save, Trash2, 
-            Play, TrendingUp, AlertCircle, CheckCircle2, 
-            ChevronDown, Loader2, Maximize2 
-        } from 'lucide-react';
-        import { motion, AnimatePresence } from 'motion/react';
-        import { 
-            Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer 
-        } from 'recharts';
-        import ReactMarkdown from 'react-markdown';
-        import { GoogleGenerativeAI } from "@google/generative-ai";
+                    <div class="input-group">
+                        <label class="col-header">交易策略 (TRADING STRATEGY)</label>
+                        <select id="strategy-select">
+                            <option value="conservative">保守型 (長期持有)</option>
+                            <option value="aggressive" selected>激進型 (短線沖銷)</option>
+                            <option value="trend">趨勢追蹤 (波段)</option>
+                            <option value="reversal">反轉策略 (逆勢)</option>
+                            <option value="custom">自定義策略...</option>
+                        </select>
+                    </div>
 
-        // APP COMPONENT
-        function App() {
-            const [apiKey, setApiKey] = useState('');
-            const [showSettings, setShowSettings] = useState(false);
-            const [strategy, setStrategy] = useState('');
-            const [history, setHistory] = useState([]);
-            const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-exp');
-            const [imagePreview, setImagePreview] = useState(null);
-            const [base64Image, setBase64Image] = useState(null);
-            const [analysis, setAnalysis] = useState(null);
-            const [isLoading, setIsLoading] = useState(false);
-            const [error, setError] = useState(null);
-            
-            const fileInputRef = useRef(null);
-            const resultEndRef = useRef(null);
+                    <div id="custom-strategy-container" class="input-group hidden">
+                        <label class="col-header">自定義策略描述</label>
+                        <textarea id="custom-strategy-input" rows="3" placeholder="例如：專注於布林帶結合 RSI 的超賣反轉分析..."></textarea>
+                    </div>
 
-            useEffect(() => {
-                const savedKey = localStorage.getItem('gemini_api_key');
-                if (savedKey) setApiKey(savedKey);
-                const savedHistory = localStorage.getItem('trading_strategy_history');
-                if (savedHistory) setHistory(JSON.parse(savedHistory));
-                const savedDraft = localStorage.getItem('trading_strategy_draft');
-                if (savedDraft) setStrategy(savedDraft);
-            }, []);
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-label">將 K 線圖拖放至此</div>
+                        <div class="drop-sublabel">支持 JPG, PNG, WEBP (最大 4MB)</div>
+                        <input type="file" id="file-input" hidden accept="image/*">
+                    </div>
 
-            useEffect(() => {
-                localStorage.setItem('trading_strategy_draft', strategy);
-            }, [strategy]);
-
-            const saveApiKey = (key) => {
-                setApiKey(key);
-                localStorage.setItem('gemini_api_key', key);
-            };
-
-            const handleImageUpload = (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const result = event.target?.result;
-                    setImagePreview(result);
-                    setBase64Image(result.split(',')[1]);
-                };
-                reader.readAsDataURL(file);
-            };
-
-            const saveCurrentStrategy = () => {
-                if (!strategy.trim()) return;
-                const name = prompt('請輸入策略名稱：', `分析策略 ${new Date().toLocaleDateString()}`);
-                if (!name) return;
-                const newStrategy = {
-                    id: crypto.randomUUID(),
-                    name,
-                    content: strategy,
-                    date: new Date().toISOString()
-                };
-                const newHistory = [newStrategy, ...history];
-                setHistory(newHistory);
-                localStorage.setItem('trading_strategy_history', JSON.stringify(newHistory));
-            };
-
-            const loadStrategy = (s) => setStrategy(s.content);
-            
-            const deleteStrategy = (id, e) => {
-                e.stopPropagation();
-                const newHistory = history.filter(s => s.id !== id);
-                setHistory(newHistory);
-                localStorage.setItem('trading_strategy_history', JSON.stringify(newHistory));
-            };
-
-            const runAnalysis = async () => {
-                if (!base64Image) { setError("請上傳 K 線圖表。"); return; }
-                if (!strategy.trim()) { setError("請提供交易策略。"); return; }
-                if (!apiKey) { setError("請先在設定中輸入 Gemini API 金鑰。"); setShowSettings(true); return; }
-
-                setIsLoading(true);
-                setError(null);
-                setAnalysis(null);
-
-                try {
-                    const genAI = new GoogleGenerativeAI(apiKey);
-                    const model = genAI.getGenerativeModel({ model: selectedModel });
-
-                    const prompt = `你是一位頂尖的量化交易員與技術分析專家。
-任務一：根據以下交易策略分析提供的 K 線圖表：
----
-\${strategy}
----
-請提供一份「直觀、高行動力」的分析報告，使用繁體中文（台灣用語）。內容必須結構化且讓交易者能「秒懂」當前機會。
-
-報告結構如下：
-1. **【市場動作建議】**：(大字標題：強烈買入 / 買入 / 觀望 / 賣出 / 強烈賣出)
-2. **【核心訊號解析】**：簡述圖表是否符合策略條件（使用勾選符號 ✅ 或 ❌）。
-3. **【交易執行計畫】**：
-   - 入場區間：
-   - 止損價位：
-   - 止盈目標 (TP1/TP2)：
-   - 預期損益比：
-4. **【關鍵風險提示】**：當前最需要注意的一個反轉訊號或外部因素。
-
-任務二：將分析結果量化為 5 個維度 (0-100)。
-在回覆的最末端，必須嚴格包含以下 JSON 區塊：
-[[SCORE_START]]
-{"trend": 0, "indicators": 0, "winrate": 0, "risk": 0, "strategy": 0}
-[[SCORE_END]]`;
-
-                    const result = await model.generateContent([
-                        prompt,
-                        { inlineData: { mimeType: "image/png", data: base64Image } }
-                    ]);
-
-                    const response = await result.response;
-                    const text = response.text();
-                    const scoreMatch = text.match(/\[\[SCORE_START\]\]([\s\S]*)\[\[SCORE_END\]\]/);
+                    <button id="analyze-btn" disabled>開始執行掃描 (EXECUTE)</button>
                     
-                    let scores = { trend: 0, indicators: 0, winrate: 0, risk: 0, strategy: 0 };
-                    let cleanMarkdown = text;
-
-                    if (scoreMatch) {
-                        try {
-                            scores = JSON.parse(scoreMatch[1].trim());
-                            cleanMarkdown = text.replace(/\[\[SCORE_START\]\]([\s\S]*)\[\[SCORE_END\]\]/, '').trim();
-                        } catch (e) {
-                            console.error("Failed to parse scores", e);
-                        }
-                    }
-
-                    setAnalysis({ markdown: cleanMarkdown, scores });
-                    setTimeout(() => resultEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-
-                } catch (err) {
-                    console.error(err);
-                    setError(err.message || "AI 分析執行失敗，請檢查 API 金鑰或網路連線。");
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-
-            const chartData = analysis ? [
-                { subject: '趨勢強度', A: analysis.scores.trend, fullMark: 100 },
-                { subject: '指標契合', A: analysis.scores.indicators, fullMark: 100 },
-                { subject: '進場勝率', A: analysis.scores.winrate, fullMark: 100 },
-                { subject: '風險評級', A: analysis.scores.risk, fullMark: 100 },
-                { subject: '策略完成', A: analysis.scores.strategy, fullMark: 100 },
-            ] : [];
-
-            return (
-                <div className="h-screen w-screen flex flex-col bg-bg text-text-main font-sans overflow-hidden">
-                    {/* Header */}
-                    <header className="h-[64px] border-b border-border flex items-center justify-between px-6 bg-surface/80 backdrop-blur-md z-50 shrink-0">
-                        <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 bg-gradient-to-br from-accent-blue to-accent rounded shadow-[0_0_10px_rgba(59,130,246,0.2)]" />
-                            <span className="font-bold text-lg tracking-tight uppercase">QUANTUM ANALYTICS</span>
-                        </div>
-
-                        <div className="flex items-center gap-6 text-[12px]">
-                            <div className="flex items-center gap-2 text-accent font-semibold tracking-wide uppercase">
-                                <div className="w-1.5 h-1.5 bg-accent rounded-full shadow-[0_0_8px_var(--color-accent)] animate-pulse" />
-                                AI ENGINE: ACTIVE
-                            </div>
-                            <span className="text-text-dim">|</span>
-                            <div className="relative group/model">
-                                <div className="flex items-center gap-2 cursor-pointer hover:text-accent-blue transition-colors">
-                                    <span className="font-mono uppercase">MODEL: {selectedModel.split('-').slice(0, 3).join(' ')}</span>
-                                    <ChevronDown size={12} className="text-text-dim" />
-                                </div>
-                                <div className="absolute right-0 top-full mt-2 w-48 bg-surface border border-border rounded shadow-2xl z-50 hidden group-hover/model:block overflow-hidden">
-                                    {[
-                                        { label: 'GEMINI 2.0 FLASH', value: 'gemini-2.0-flash-exp' },
-                                        { label: 'GEMINI 1.5 FLASH', value: 'gemini-1.5-flash' },
-                                        { label: 'GEMINI 1.5 PRO', value: 'gemini-1.5-pro-latest' }
-                                    ].map(m => (
-                                        <div 
-                                            key={m.value}
-                                            onClick={() => setSelectedModel(m.value)}
-                                            className={`p-3 text-[11px] font-mono hover:bg-bg cursor-pointer border-b border-border last:border-0 transition-colors \${selectedModel === m.value ? 'text-accent-blue bg-bg/50' : 'text-text-main'}`}
-                                        >
-                                            {m.label}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <span className="text-text-dim">|</span>
-                            <button 
-                                onClick={() => setShowSettings(true)}
-                                className="flex items-center gap-2 hover:text-accent-blue transition-colors text-text-dim"
-                            >
-                                <Settings2 size={14} />
-                                <span className="font-mono uppercase">API: {apiKey ? '••••' + apiKey.slice(-4) : '未設定'}</span>
-                            </button>
-                        </div>
-                    </header>
-
-                    {/* Settings Modal */}
-                    <AnimatePresence>
-                        {showSettings && (
-                            <motion.div 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bg/80 backdrop-blur-sm"
-                            >
-                                <motion.div 
-                                    initial={{ scale: 0.95, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0.95, opacity: 0 }}
-                                    className="bg-surface border border-border p-6 rounded-xl shadow-2xl w-full max-w-md space-y-6"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                                            <Settings2 size={16} className="text-accent-blue" />
-                                            系統設定
-                                        </h3>
-                                        <button onClick={() => setShowSettings(false)} className="text-text-dim hover:text-text-main">
-                                            <Maximize2 className="rotate-45" size={20} />
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] uppercase font-bold text-text-dim tracking-tight">Gemini API Key</label>
-                                            <input 
-                                                type="password"
-                                                value={apiKey}
-                                                onChange={(e) => saveApiKey(e.target.value)}
-                                                placeholder="貼上您的 API 金鑰..."
-                                                className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-sm font-mono text-text-main focus:border-accent-blue outline-none transition-colors"
-                                            />
-                                            <p className="text-[10px] text-text-dim leading-relaxed">
-                                                您的金鑰將儲存在瀏覽器的 LocalStorage 中。您可以從 Google AI Studio 取得金鑰。
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <button 
-                                        onClick={() => setShowSettings(false)}
-                                        className="w-full bg-accent-blue text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:brightness-110"
-                                    >
-                                        儲存並關閉
-                                    </button>
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Main Content Grid */}
-                    <main className="flex-1 grid grid-cols-1 md:grid-cols-[380px_1fr] bg-border overflow-hidden gap-[1px]">
-                        {/* Left Side: Input Panel */}
-                        <section className="bg-bg flex flex-col h-full overflow-hidden">
-                            <div className="h-[52px] px-5 border-b border-border flex items-center justify-between shrink-0">
-                                <span className="text-[12px] font-bold text-text-dim tracking-widest uppercase">策略與輸入</span>
-                                <span className="text-[10px] text-accent-blue font-mono">PORTABLE V1.0</span>
-                            </div>
-
-                            <div className="flex-1 flex flex-col p-5 gap-6 overflow-y-auto">
-                                <div className="flex flex-col gap-2 shrink-0">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-[11px] font-bold text-text-dim tracking-widest uppercase">交易邏輯</label>
-                                        <div className="flex gap-2">
-                                            <button onClick={saveCurrentStrategy} className="p-1 hover:text-accent-blue text-text-dim transition-colors" title="儲存策略">
-                                                <Save size={14} />
-                                            </button>
-                                            <div className="relative group/history">
-                                                <button className="p-1 hover:text-accent-blue text-text-dim transition-colors">
-                                                    <History size={14} />
-                                                </button>
-                                                <div className="absolute left-0 top-full mt-1 w-64 bg-surface border border-border rounded shadow-2xl z-50 hidden group-hover/history:block overflow-hidden">
-                                                    <div className="p-2 border-b border-border bg-bg/50 text-[10px] font-bold text-text-dim uppercase tracking-wider">歷史版本</div>
-                                                    <div className="max-h-60 overflow-y-auto">
-                                                        {history.length === 0 ? (
-                                                            <div className="p-4 text-xs text-text-dim text-center">尚無存入的策略</div>
-                                                        ) : (
-                                                            history.map(s => (
-                                                                <div key={s.id} onClick={() => loadStrategy(s)} className="p-3 hover:bg-bg cursor-pointer border-b border-border flex items-center justify-between group/item">
-                                                                    <div className="flex flex-col min-w-0">
-                                                                        <span className="text-xs truncate font-medium text-text-main">{s.name}</span>
-                                                                        <span className="text-[9px] text-text-dim">{new Date(s.date).toLocaleDateString()}</span>
-                                                                    </div>
-                                                                    <button onClick={(e) => deleteStrategy(s.id, e)} className="text-text-dim hover:text-red-400 p-1 transition-opacity">
-                                                                        <Trash2 size={12} />
-                                                                    </button>
-                                                                </div>
-                                                            ))
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <textarea 
-                                        value={strategy}
-                                        onChange={(e) => setStrategy(e.target.value)}
-                                        placeholder="例如：當 EMA(20) 突破 EMA(50) 且 RSI 低於 30 時..."
-                                        spellCheck="false"
-                                        className="w-full h-80 bg-surface border border-border rounded-lg p-3 text-[13px] font-mono text-slate-400 outline-none focus:border-accent-blue transition-colors resize-none leading-relaxed"
-                                    />
-                                </div>
-
-                                <div className="flex flex-col gap-2 shrink-0">
-                                    <label className="text-[11px] font-bold text-text-dim tracking-widest uppercase">K 線圖表饋送</label>
-                                    <div 
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className={`h-[140px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 bg-surface cursor-pointer hover:border-accent-blue transition-all group overflow-hidden \${imagePreview ? 'border-accent/50' : 'border-border'}`}
-                                    >
-                                        <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                                        {imagePreview ? (
-                                            <div className="relative w-full h-full">
-                                                <img src={imagePreview} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                                                <div className="absolute inset-0 flex items-center justify-center bg-bg/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Upload className="text-white" size={24} />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="text-2xl transition-transform group-hover:scale-110">📈</div>
-                                                <div className="text-[12px] text-text-dim font-medium">點擊選擇上傳分析目標</div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <button 
-                                    onClick={runAnalysis}
-                                    disabled={isLoading}
-                                    className="mt-auto bg-accent-blue hover:brightness-110 disabled:brightness-50 text-white border-none py-4 rounded-lg font-bold text-[14px] flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-accent-blue/10"
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <Loader2 className="animate-spin" size={18} />
-                                            <span className="font-mono tracking-widest">執行量子分析中...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span className="tracking-wide">執行量子分析</span>
-                                            <span className="opacity-70">⚡</span>
-                                        </>
-                                    )}
-                                </button>
-                                
-                                {error && (
-                                    <div className="p-3 bg-red-900/10 border border-red-800/20 rounded-lg flex items-start gap-3">
-                                        <AlertCircle className="text-red-400 shrink-0" size={14} />
-                                        <p className="text-[11px] text-red-200">{error}</p>
-                                    </div>
-                                )}
-                            </div>
-                        </section>
-
-                        {/* Right Side: Intelligence Report Panel */}
-                        <section className="bg-[#111113] flex flex-col h-full overflow-hidden">
-                            <div className="h-[52px] px-5 border-b border-border flex items-center justify-between shrink-0 bg-bg/50">
-                                <span className="text-[12px] font-bold text-text-dim tracking-widest uppercase">情報分析報告</span>
-                            </div>
-
-                            <div className="flex-1 p-6 overflow-y-auto scroll-smooth">
-                                <AnimatePresence mode="wait">
-                                    {!analysis && !isLoading ? (
-                                        <motion.div 
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 0.4 }}
-                                            exit={{ opacity: 0 }}
-                                            className="h-full flex flex-col items-center justify-center text-center space-y-6"
-                                        >
-                                            <BarChart3 size={80} className="text-text-dim" strokeWidth={1} />
-                                            <div className="space-y-2">
-                                                <h3 className="text-lg font-bold tracking-[0.2em] text-text-main">準備分析</h3>
-                                                <p className="text-[11px] text-text-dim font-mono tracking-widest uppercase">等待數據輸入...</p>
-                                            </div>
-                                        </motion.div>
-                                    ) : null}
-
-                                    {isLoading ? (
-                                        <motion.div 
-                                            key="loading"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="h-full flex flex-col items-center justify-center gap-6"
-                                        >
-                                            <div className="relative">
-                                                <div className="w-20 h-20 border-[3px] border-accent-blue/10 border-t-accent-blue rounded-full animate-spin" />
-                                                <Play className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-accent-blue animate-pulse" size={24} fill="currentColor" />
-                                            </div>
-                                            <div className="text-center space-y-2">
-                                                <p className="text-[10px] font-bold text-accent-blue tracking-[0.3em] uppercase animate-pulse">正在解析遙測數據...</p>
-                                                <p className="text-text-dim text-[11px] italic text-center">同步多維度市場數據中</p>
-                                            </div>
-                                        </motion.div>
-                                    ) : null}
-
-                                    {analysis && (
-                                        <motion.div 
-                                            key="results"
-                                            initial={{ opacity: 0, y: 15 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="bg-surface border border-border rounded-xl p-8 shadow-2xl relative"
-                                        >
-                                            <div ref={resultEndRef} className="absolute -top-40" />
-                                            <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-10">
-                                                <div className="prose prose-invert max-w-none text-slate-300">
-                                                    <ReactMarkdown>{analysis.markdown}</ReactMarkdown>
-                                                    <div className="mt-10 pt-6 border-t border-border flex items-center gap-4 text-[11px] text-text-dim italic leading-relaxed">
-                                                        <AlertCircle size={14} className="shrink-0" />
-                                                        <span>量子分析模型僅供實驗性使用。交易涉及重大風險。</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex flex-col items-center shrink-0 pt-2 lg:pt-0">
-                                                    <span className="text-[11px] font-bold text-text-dim uppercase tracking-[0.2em] mb-6">量化評分</span>
-                                                    <div className="h-56 w-56 mb-8 bg-bg/30 rounded-full p-2 border border-border/50">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-                                                                <PolarGrid stroke="#27272a" strokeDasharray="3" />
-                                                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#71717a', fontSize: 10, fontWeight: 600 }} />
-                                                                <Radar
-                                                                    name="Analysis"
-                                                                    dataKey="A"
-                                                                    stroke="#10b981"
-                                                                    fill="#10b981"
-                                                                    fillOpacity={0.25}
-                                                                    strokeWidth={2}
-                                                                    animationDuration={1500}
-                                                                />
-                                                            </RadarChart>
-                                                        </ResponsiveContainer>
-                                                    </div>
-                                                    <div className="w-full grid grid-cols-2 gap-3">
-                                                        {[
-                                                            { label: '趨勢強度', value: `\${analysis.scores.trend}%`, color: 'text-accent' },
-                                                            { label: '勝率預估', value: `\${analysis.scores.winrate}%`, color: 'text-accent' },
-                                                            { label: '風險評析', value: analysis.scores.risk > 70 ? '穩定' : analysis.scores.risk > 40 ? '中性' : '警示', color: analysis.scores.risk > 70 ? 'text-accent' : analysis.scores.risk > 40 ? 'text-amber-400' : 'text-red-400' },
-                                                            { label: '策略適配', value: `\${analysis.scores.strategy}%`, color: 'text-accent' },
-                                                        ].map((item) => (
-                                                            <div key={item.label} className="bg-bg/60 border border-border p-3 rounded-lg flex flex-col gap-1 transition-colors hover:border-accent-blue/30">
-                                                                <span className="text-[10px] uppercase font-bold text-text-dim tracking-tight">{item.label}</span>
-                                                                <span className={`text-sm font-bold font-mono \${item.color}`}>{item.value}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </section>
-                    </main>
-
-                    {/* Footer */}
-                    <footer className="h-[32px] bg-surface border-t border-border flex items-center justify-between px-5 text-[10px] text-text-dim font-mono tracking-wider shrink-0">
-                        <div className="flex items-center gap-4">
-                            <span className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
-                                系統狀態：就緒...
-                            </span>
-                            <span>SINGLE-FILE-MODE: ENABLED</span>
-                        </div>
-                        <div className="flex gap-6 items-center">
-                            <div className="bg-accent/10 text-accent px-2 py-0.5 rounded border border-accent/20 miniaturize">STABLE</div>
-                        </div>
-                    </footer>
+                    <div id="preview-container" class="hidden">
+                        <img id="image-preview" src="" alt="Chart Preview">
+                    </div>
                 </div>
-            );
-        }
+            </section>
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
-    </script>
+            <section class="results-window">
+                <div class="panel-header">診斷輸出 (DIAGNOSTIC OUTPUT)</div>
+                <div id="welcome-msg" class="placeholder-msg">
+                    <p class="data-value">等待輸入中...</p>
+                    <p class="small-caps">請上傳 K 線圖以開始分析</p>
+                </div>
+                
+                <div id="loading-state" class="hidden">
+                    <div class="scanner-line"></div>
+                    <p class="data-value animate-pulse">正在解析市場形態...</p>
+                </div>
+
+                <div id="analysis-content" class="hidden">
+                    <div class="rating-badge" id="rating-badge">中性</div>
+                    
+                    <div class="data-grid">
+                        <div class="data-row">
+                            <span class="col-header">信心指數 (Confidence)</span>
+                            <span id="res-confidence" class="data-value">--%</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="col-header">選定策略 (Strategy)</span>
+                            <span id="res-strategy" class="data-value">--</span>
+                        </div>
+                    </div>
+
+                    <div class="observations-list">
+                        <span class="col-header">關鍵觀察 (KEY OBSERVATIONS)</span>
+                        <ul id="res-observations">
+                            <!-- Items added via JS -->
+                        </ul>
+                    </div>
+
+                    <div class="risk-section">
+                        <span class="col-header">風險評估 (RISK ASSESSMENT)</span>
+                        <p id="res-risk" class="data-value"></p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="data-row">
+                <span class="col-header">免責聲明 (Disclaimer)</span>
+                <span class="small-caps">本工具僅供參考，不構成任何投資建議。AI 分析可能存在誤差，請謹慎投資。</span>
+            </div>
+        </footer>
+    </div>
+    <script type="module" src="/app.js"></script>
 </body>
 </html>

@@ -1,20 +1,23 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# K-Line AI Strategy Analyst
 
-# Run and deploy your AI Studio app
+這是一個基於 Gemini AI 的專業 K 線圖分析工具，採用極簡的靜態檔案結構（HTML/JS/CSS）。
 
-This contains everything you need to run your app locally.
+## 功能特點
+- **技術形態分析**：自動識別 K 線組合、支撐壓力位及趨勢線。
+- **多策略支持**：可選擇保守、激進、趨勢跟蹤等不同交易策略。
+- **量化評分**：提供買入/賣出建議及信心指數。
+- **風險評估**：針對分析結果提供關鍵風險提示。
 
-View your app in AI Studio: https://ai.studio/apps/45c4a7ca-ac96-48ed-9b2c-57c03c04b95a
+## 檔案結構
+- `index.html`: 儀表板界面。
+- `app.js`: 核心邏輯，集成 Google Gemini API。
+- `style.css`: 專業交易終端風格配色。
+- `package.json`: 項目配置與依賴。
 
-## Run Locally
+## 使用說明
+1. 選擇交易策略。
+2. 上傳或拖放 K 線圖（包含技術指標更佳）。
+3. 點擊「EXECUTE SCAN」開始 AI 診斷。
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+---
+*免責聲明：本工具分析結果僅供參考，不構成任何投資建議。*
