@@ -31,10 +31,10 @@ import ReactMarkdown from 'react-markdown';
 import { GoogleGenAI } from "@google/genai";
 
 // Initialize Gemini API
-const getAi = () => {
-  const key = process.env.GEMINI_API_KEY;
+const getAi = (userKey?: string) => {
+  const key = userKey || process.env.GEMINI_API_KEY;
   if (!key) {
-    throw new Error('找不到 Gemini API 金鑰。請在 GitHub Secrets 中設定 VITE_GEMINI_API_KEY，或在本地環境變數中設定。');
+    throw new Error('請先在設定中輸入您的 Gemini API 金鑰。');
   }
   return new GoogleGenAI({ apiKey: key });
 };
@@ -58,8 +58,11 @@ interface AnalysisResult {
 }
 
 export default function App() {
+  const [apiKey, setApiKey] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
   const [strategy, setStrategy] = useState('');
   const [history, setHistory] = useState<Strategy[]>([]);
+  // ... rest of state stays the same
   const [selectedModel, setSelectedModel] = useState('gemini-3-flash-preview');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [base64Image, setBase64Image] = useState<string | null>(null);
@@ -72,6 +75,9 @@ export default function App() {
 
   // Load from localStorage on mount
   useEffect(() => {
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey) setApiKey(savedKey);
+
     const savedHistory = localStorage.getItem('trading_strategy_history');
     if (savedHistory) setHistory(JSON.parse(savedHistory));
 
@@ -83,6 +89,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('trading_strategy_draft', strategy);
   }, [strategy]);
+
+  const saveApiKey = (key: string) => {
+    setApiKey(key);
+    localStorage.setItem('gemini_api_key', key);
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,7 +151,7 @@ export default function App() {
     setAnalysis(null);
 
     try {
-      const ai = getAi();
+      const ai = getAi(apiKey);
       const response = await ai.models.generateContent({
         model: selectedModel,
         contents: {
@@ -262,9 +273,67 @@ ${strategy}
             </div>
           </div>
           <span className="text-text-dim">|</span>
-          <div className="text-text-dim font-mono">API: ••••••••••••4920</div>
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-2 hover:text-accent-blue transition-colors text-text-dim"
+          >
+            <Settings2 size={14} />
+            <span className="font-mono uppercase">API: {apiKey ? '••••' + apiKey.slice(-4) : 'NOT SET'}</span>
+          </button>
         </div>
       </header>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bg/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-surface border border-border p-6 rounded-xl shadow-2xl w-full max-w-md space-y-6"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                  <Settings2 size={16} className="text-accent-blue" />
+                  System Settings
+                </h3>
+                <button onClick={() => setShowSettings(false)} className="text-text-dim hover:text-text-main">
+                  <Maximize2 className="rotate-45" size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-bold text-text-dim tracking-tight">Gemini API Key</label>
+                  <input 
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => saveApiKey(e.target.value)}
+                    placeholder="貼上您的 API 金鑰..."
+                    className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-sm font-mono text-text-main focus:border-accent-blue outline-none transition-colors"
+                  />
+                  <p className="text-[10px] text-text-dim leading-relaxed">
+                    您的金鑰將儲存在瀏覽器的 LocalStorage 中，不會上傳到任何伺服器。
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="w-full bg-accent-blue text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:brightness-110"
+              >
+                Save and Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content Grid */}
       <main className="flex-1 grid grid-cols-[380px_1fr] bg-border overflow-hidden gap-[1px]">
