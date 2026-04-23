@@ -2,7 +2,7 @@
 
 這是一個專業的 AI K 線策略分析助手，透過 Google Gemini 視覺模型，直接分析您的交易策略與 K 線圖表。
 
-### 🚀 [立即點擊開啟網頁 (GitHub Pages)](https://你的帳號.github.io/你的專案名稱/)
+### 🚀 [立即點擊開啟網頁 (GitHub Pages)]([https://你的帳號.github.io/你的專案名稱/)](https://fen870916.github.io/AI-/)
 
 > **注意**：請將以上的連結替換成您實際的 GitHub 使用者名稱與專案路徑。
 
